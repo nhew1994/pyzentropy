@@ -1,1 +1,1 @@
-# PyZentropy
+# pyzentropy
