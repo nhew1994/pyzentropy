@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyzentropy"
+version = "0.0.0"
+authors = [
+  { name="Nigel Lee En Hew", email="njh5724@psu.edu"}, 
+  { name="Luke A. Myers", email="lam7027@psu.edu" }
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Density Functional Theory",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+readme = "README.md"
+
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.1.4",
+    "pymongo>=4.4",
+]
+
+keywords = ["materials", "science", "thermodynamics", "zentropy", "emergent properties"]
+
+[project.urls]
+"Homepage" = "https://github.com/nhew1994/pyzentropy"
