@@ -7,7 +7,6 @@ BOLTZMANN_CONSTANT = constants.physical_constants[
 ][0]
 
 
-
 def canonical_partition_function(
     config_helmholtz_energeries: np.array,
     temperature
