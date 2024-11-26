@@ -93,4 +93,77 @@ def inter_bulk_modulus(
 
     return common_factor*(term_1 + term_2)
 
+def system_bulk_modulus(
+    system_helmholtz_energy,
+    volumes
+):
+    fk_spline = UnivariateSpline(volumes, system_helmholtz_energy, s=0, k=2)
+    return volumes*fk_spline.derivative(n=2)(volumes)
+
+def alt_system_bulk_modulus(
+    configuration_probabilities,
+    volumes,
+    configuration_helmholtz_energies,
+    temperature
+):
+    intra = intra_bulk_modulus(
+        configuration_probabilities,
+        volumes,
+        configuration_helmholtz_energies
+    )
+    inter = inter_bulk_modulus(
+        configuration_probabilities,
+        volumes,
+        configuration_helmholtz_energies,
+        temperature
+    )
+    return intra + inter
+
+def configuration_internal_energy(
+    configuration_free_energy,
+    configuration_entropy,
+    temperature
+):
+    return configuration_free_energy + temperature*configuration_entropy
+
+def intra_heat_capacity(
+    configuration_probabilities,
+    configuration_heat_capacities,
+):
+    return np.sum(configuration_probabilities*configuration_heat_capacities)
+
+def inter_heat_capcity(
+    configuration_probabilities,
+    configuration_internal_energies,
+    temperature
+):
+    pk = configuration_probabilities
+    uk = configuration_internal_energies
+
+    common_factor = (1/(BOLTZMANN_CONSTANT*temperature**2))
+    term_1 = np.sum(pk*uk**2)
+    term_2 = -(np.sum(pk*uk))**2
+
+    return common_factor*(term_1 + term_2)
+
+def alt_heat_capacity(configuration_probabilities,
+    configuration_heat_capacities,
+    configuration_internal_energies,
+    temperature
+):
+    intra = intra_heat_capacity(
+        configuration_probabilities,
+        configuration_heat_capacities
+    )
+    inter = inter_heat_capcity(
+        configuration_probabilities,
+        configuration_internal_energies,
+        temperature
+    )
+    return intra + inter
+
+def heat_capacity(system_entropy, temperature):
+    s_spline = UnivariateSpline(temperature, system_entropy, s=0, k=1)
+    
+    return temperature*s_spline.derivative(n=1)(temperature)
 
