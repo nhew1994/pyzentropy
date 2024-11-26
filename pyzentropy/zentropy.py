@@ -50,6 +50,18 @@ def system_entropy(configuration_probabilities, configuration_entropies):
     intra = intra_entropy(configuration_probabilities, configuration_entropies)
     return gibbs + intra
 
+def alt_system_entropy(
+    partition_function,
+    configuration_internal_energies,
+    configuration_probabilities,
+    temperature
+):
+    term_1 = -BOLTZMANN_CONSTANT*temperature*np.log(partition_function)
+    term_2 = (1/temperature)*np.sum(
+        configuration_probabilities*configuration_internal_energies
+        )
+    return term_1 + term_2
+
 def configuration_entropies(
     config_helmholtz_energies,
     system_helmholtz_energy,
