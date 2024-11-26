@@ -47,10 +47,7 @@ def intra_entropy(
 
 def system_entropy(configuration_probabilities, configuration_entropies):
     gibbs = gibbs_entropy(configuration_probabilities)
-    intra = intraconfigurational_entropy(
-        configuration_probabilities,
-        configuration_entropies
-    )
+    intra = intra_entropy(configuration_probabilities, configuration_entropies)
     return gibbs + intra
 
 def configuration_entropies(
@@ -81,12 +78,19 @@ def intra_bulk_modulus(
 def inter_bulk_modulus(
         configuration_probabilities,
         volumes,
-        configuration_helmholtz_energies
+        configuration_helmholtz_energies,
+        temperature
 ):
     pk = configuration_probabilities
     v = volumes
     fk = configuration_helmholtz_energies
 
-    fk_spline = UnivariateSpline(v, fk, s=0, k=2)
-    return np.sum(pk*fk_spline.derivative(n=2)(v))
+    fk_spline = UnivariateSpline(v, fk, s=0, k=1)
+
+    common_factor = (v/(BOLTZMANN_CONSTANT*temperature))
+    term_1 = (np.sum(pk*fk_spline.derivative(n=1)(v)))**2
+    term_2 = -(np.sum(pk*(fk_spline.derivative(n=1)(v))**2))
+
+    return common_factor*(term_1 + term_2)
+
 
