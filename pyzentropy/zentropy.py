@@ -6,176 +6,148 @@ BOLTZMANN_CONSTANT = constants.physical_constants[
     "Boltzmann constant in eV/K"
 ][0]
 
+class InternalEnergy:
+    def __init__(
+        self,
+        internal_energy: np.array,
+        volume: np.array
+    ):
+        self.energy = internal_energy
+        self.volume = volume
 
-def canonical_partition_function(
-    config_helmholtz_energeries: np.array,
-    temperature
-):
-    z_k = np.exp(
-        -config_helmholtz_energeries /( BOLTZMANN_CONSTANT*temperature)
+class HelmholtzEnergy:
+    def __init__(
+        self,
+        helmholtz_energy: np.array,
+        volume: np.array,
+        temperature: np.array,
+    ):
+        self.energy = helmholtz_energy
+        self.volume = volume
+        self.temperature = temperature
+
+class Entropy:
+    def __init__(
+        self,
+        entropy,
+        volume,
+        temperature
+    ):
+        self.entropy = entropy
+        self.volume = volume
+        self.temperature = temperature
+
+class Configuration:
+    def __init__(
+        self,
+        config_name,
+        structure,
+        internal_energy = None,
+        entropy = None,
+        helmholtz_energy = None
+        probability = None
+    ):
+        self.config_name = config_name
+        self.structure = structure
+        self.internal_energy = internal_energy
+        self.entropy = entropy
+        self.helmholtz_energy = helmholtz_energy
+        
+    def helmolholtz_energy(
+        self,
+        internal_energy: InternalEnergy,
+        entropy: Entropy
+    ):
+        if internal_energy.volume != entropy.volume:
+            raise ValueError(
+                "Internal energy and entropy volumes must be the same"
+            )
+        u = internal_energy.energy
+        v = internal_energy.volume
+        t = entropy.temperature
+        s = entropy.entropy
+        
+        f = np.zeros((len(t), len(v)))
+        for i in enumerate(t):
+            f[i] = u - t*s[i]
+        self.helmholtz_energy = HelmholtzEnergy(
+            helmholtz_energy = f,
+            volume = v,
+            temperature = t
         )
-    return np.sum(z_k)
 
-def system_helmholtz_energy(
-    partition_function: float,
-    temperature: float
-):
-    return -BOLTZMANN_CONSTANT*temperature*np.log(partition_function)
-
-def configuration_probabilities(
-    config_helmholtz_energies,
-    system_helmholtz_energy,
-    temperature
-):
-    p = np.exp(
-        -(config_helmholtz_energies-system_helmholtz_energy)/(
-            BOLTZMANN_CONSTANT*temperature
-        )
-    )
-    return p
-
-def gibbs_entropy(configuration_probabilities): # interconfigurational entropy
-    return -BOLTZMANN_CONSTANT*np.sum(
-        configuration_probabilities*np.log(configuration_probabilities)
+    def internal_energy(
+        self,
+        helmholtz_energy: HelmholtzEnergy,
+        entropy: Entropy
+    ):
+        if helmholtz_energy.volume != entropy.volume:
+            raise ValueError(
+                "Helmholtz energy and entropy volumes must be the same"
+            )
+        if helmholtz_energy.temperature != entropy.temperature:
+            raise ValueError(
+                "Helmholtz energy and entropy temperatures must be the same"
+            )
+        
+        f = helmholtz_energy.energy
+        v = helmholtz_energy.volume
+        t = entropy.temperature
+        s = entropy.entropy
+        u = f[0] + t[0]*s[0]
+        self.internal_energy = InternalEnergy(
+            internal_energy = u,
+            volume = v
         )
     
-def intra_entropy(
-    configuration_probabilities,
-    configuration_entropies
-): # just a suggestion for the name
-    return np.sum(configuration_probabilities*configuration_entropies)
+    def entropy(
+        self,
+        helmholtz_energy: HelmholtzEnergy,
+        internal_energy: InternalEnergy
+    ):
+        if helmholtz_energy.volume != internal_energy.volume:
+            raise ValueError(
+                "Helmholtz energy and internal energy volumes must be the same"
+            )
+        if helmholtz_energy.temperature != internal_energy.temperature:
+            raise ValueError(
+                "Helmholtz energy and internal energy temperatures must be the same"
+            )
+        
+        f = helmholtz_energy.energy
+        v = helmholtz_energy.volume
+        t = helmholtz_energy.temperature
+        u = internal_energy.energy
 
-def system_entropy(configuration_probabilities, configuration_entropies):
-    gibbs = gibbs_entropy(configuration_probabilities)
-    intra = intra_entropy(configuration_probabilities, configuration_entropies)
-    return gibbs + intra
-
-def alt_system_entropy(
-    partition_function,
-    configuration_internal_energies,
-    configuration_probabilities,
-    temperature
-):
-    term_1 = -BOLTZMANN_CONSTANT*temperature*np.log(partition_function)
-    term_2 = (1/temperature)*np.sum(
-        configuration_probabilities*configuration_internal_energies
+        for i in enumerate(t):
+            s = (f[i] - u[i])/t[i]
+        self.entropy = Entropy(
+            entropy = s,
+            volume = v,
+            temperature = t
         )
-    return term_1 + term_2
 
-def configuration_entropies(
-    config_helmholtz_energies,
-    system_helmholtz_energy,
-    temperature
-):
-    configuration_probabilities = configuration_probabilities(
-        config_helmholtz_energies,
-        system_helmholtz_energy,
-        temperature
-    )
-    summation = np.sum(configuration_probabilities*config_helmholtz_energies)
-    return (summation-system_helmholtz_energy)/temperature
-
-def intra_bulk_modulus(
-        configuration_probabilities,
-        volumes,
-        configuration_helmholtz_energies
-):
-    pk = configuration_probabilities
-    v = volumes
-    fk = configuration_helmholtz_energies
-
-    fk_spline = UnivariateSpline(v, fk, s=0, k=2)
-    return np.sum(pk*v*fk_spline.derivative(n=2)(v))
-
-def inter_bulk_modulus(
-        configuration_probabilities,
-        volumes,
-        configuration_helmholtz_energies,
-        temperature
-):
-    pk = configuration_probabilities
-    v = volumes
-    fk = configuration_helmholtz_energies
-
-    fk_spline = UnivariateSpline(v, fk, s=0, k=1)
-
-    common_factor = (v/(BOLTZMANN_CONSTANT*temperature))
-    term_1 = (np.sum(pk*fk_spline.derivative(n=1)(v)))**2
-    term_2 = -(np.sum(pk*(fk_spline.derivative(n=1)(v))**2))
-
-    return common_factor*(term_1 + term_2)
-
-def system_bulk_modulus(
-    system_helmholtz_energy,
-    volumes
-):
-    fk_spline = UnivariateSpline(volumes, system_helmholtz_energy, s=0, k=2)
-    return volumes*fk_spline.derivative(n=2)(volumes)
-
-def alt_system_bulk_modulus(
-    configuration_probabilities,
-    volumes,
-    configuration_helmholtz_energies,
-    temperature
-):
-    intra = intra_bulk_modulus(
-        configuration_probabilities,
-        volumes,
-        configuration_helmholtz_energies
-    )
-    inter = inter_bulk_modulus(
-        configuration_probabilities,
-        volumes,
-        configuration_helmholtz_energies,
-        temperature
-    )
-    return intra + inter
-
-def configuration_internal_energy(
-    configuration_free_energy,
-    configuration_entropy,
-    temperature
-):
-    return configuration_free_energy + temperature*configuration_entropy
-
-def intra_heat_capacity(
-    configuration_probabilities,
-    configuration_heat_capacities,
-):
-    return np.sum(configuration_probabilities*configuration_heat_capacities)
-
-def inter_heat_capcity(
-    configuration_probabilities,
-    configuration_internal_energies,
-    temperature
-):
-    pk = configuration_probabilities
-    uk = configuration_internal_energies
-
-    common_factor = (1/(BOLTZMANN_CONSTANT*temperature**2))
-    term_1 = np.sum(pk*uk**2)
-    term_2 = -(np.sum(pk*uk))**2
-
-    return common_factor*(term_1 + term_2)
-
-def alt_heat_capacity(configuration_probabilities,
-    configuration_heat_capacities,
-    configuration_internal_energies,
-    temperature
-):
-    intra = intra_heat_capacity(
-        configuration_probabilities,
-        configuration_heat_capacities
-    )
-    inter = inter_heat_capcity(
-        configuration_probabilities,
-        configuration_internal_energies,
-        temperature
-    )
-    return intra + inter
-
-def heat_capacity(system_entropy, temperature):
-    s_spline = UnivariateSpline(temperature, system_entropy, s=0, k=1)
-    
-    return temperature*s_spline.derivative(n=1)(temperature)
+class System:
+    def __init__(
+        self,
+        configurations,
+    ):
+        self.configurations = configurations
+    def partition_function(self):
+        config_helmholtz_energies = np.array(
+            [config.helmholtz_energy.energy for config in self.configurations]
+        )
+        self.helmholtz_energy = None
+        self.gibbs_entropy = None
+        self.inter_entropy = self.gibbs_entropy
+        self.intra_entropy = None
+        self.entropy = None
+        self.bulk_modulus = None
+        self.inter_bulk_modulus = None
+        self.intra_bulk_modulus = None
+        self.alt_system_bulk_modulus = None
+        self.intra_heat_capacity = None
+        self.inter_heat_capacity = None
+        self.alt_heat_capacity = None
+        self.heat_capacity = None
 
