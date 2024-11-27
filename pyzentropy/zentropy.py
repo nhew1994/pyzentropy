@@ -75,6 +75,20 @@ class Configuration:
             volume = v,
             temperature = t
         )
+    def partition_function(
+        self,
+        helmholtz_energy: HelmholtzEnergy,
+    ):
+        f = helmholtz_energy.energy
+        v = helmholtz_energy.volume
+        t = helmholtz_energy.temperature
+        beta = 1/(BOLTZMANN_CONSTANT*t)
+        zk = np.zeros((len(t), len(v)))
+        for i in enumerate(t):
+            zk[i] = np.exp(
+                -f[i]*beta
+            )
+        return zk
 
     def internal_energy(
         self,
@@ -131,12 +145,35 @@ class System:
     def __init__(
         self,
         configurations,
+        partition_function = None
     ):
         self.configurations = configurations
     def partition_function(self):
-        config_helmholtz_energies = np.array(
-            [config.helmholtz_energy.energy for config in self.configurations]
-        )
+        # check if all configurations have the same volume and temperature
+        config_volumes = [
+            config.helmholtz_energy.volume for config in self.configurations
+        ]
+        config_temperatures = [
+            config.helmholtz_energy.temperature for config in self.configurations
+        ]
+        if not all([v == config_volumes[0] for v in config_volumes]):
+            raise ValueError("Configurations must have the same volume")
+        if not all([t == config_temperatures[0] for t in config_temperatures]):
+            raise ValueError("Configurations must have the same temperature")
+        
+        config_helmholtz_energies = [
+            config.helmholtz_energy.energy for config in self.configurations
+        ]
+        fk = config_helmholtz_energies
+        kb = BOLTZMANN_CONSTANT
+        t = self.configurations[0].helmholtz_energy.temperature
+        
+        
+        z = np.sum(np.exp(
+            -f/(kb*t)
+        ))
+
+
         self.helmholtz_energy = None
         self.gibbs_entropy = None
         self.inter_entropy = self.gibbs_entropy
