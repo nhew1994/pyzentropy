@@ -44,7 +44,7 @@ class Configuration:
         structure,
         internal_energy = None,
         entropy = None,
-        helmholtz_energy = None
+        helmholtz_energy = None,
         probability = None
     ):
         self.config_name = config_name
