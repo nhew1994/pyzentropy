@@ -53,7 +53,7 @@ class Configuration:
         self.entropy = entropy
         self.helmholtz_energy = helmholtz_energy
         
-    def helmolholtz_energy(
+    def helmholtz_energy(
         self,
         internal_energy: InternalEnergy,
         entropy: Entropy
