@@ -15,9 +15,6 @@ def canonical_partition_function(
         -config_helmholtz_energeries /( BOLTZMANN_CONSTANT*temperature)
         )
     return np.sum(z_k)
-        np.exp(-config_helmholtz_energe()ries / BOLTZMANN_CONSTANT*temperature))
-
-    )
 
 def configuration_probabilities(
     config_helmholtz_energies,
