@@ -1,5 +1,6 @@
 from scipy import constants
 import numpy as np
+from functools import cached_property
 from scipy.interpolate import UnivariateSpline
 
 BOLTZMANN_CONSTANT = constants.physical_constants[
@@ -15,17 +16,6 @@ class InternalEnergy:
         self.energy = internal_energy
         self.volume = volume
 
-class HelmholtzEnergy:
-    def __init__(
-        self,
-        helmholtz_energy: np.array,
-        volume: np.array,
-        temperature: np.array,
-    ):
-        self.energy = helmholtz_energy
-        self.volume = volume
-        self.temperature = temperature
-
 class Entropy:
     def __init__(
         self,
@@ -37,44 +27,161 @@ class Entropy:
         self.volume = volume
         self.temperature = temperature
 
+class HelmholtzEnergy:
+    def __init__(
+        self,
+        helmholtz_energy: np.array,
+        volume: np.array,
+        temperature: np.array,
+    ):
+        self.energy = helmholtz_energy
+        self.volume = volume
+        self.temperature = temperature
+
 class Configuration:
     def __init__(
         self,
         config_name,
         structure,
+        volume = None,
+        temperature = None,
         internal_energy = None,
         entropy = None,
-        helmholtz_energy = None,
-        probability = None
+        helmholtz_energy = None
     ):
         self.config_name = config_name
         self.structure = structure
+        self.volume = volume
+        self.temperature = temperature
         self.internal_energy = internal_energy
         self.entropy = entropy
         self.helmholtz_energy = helmholtz_energy
-        
-    def helmholtz_energy(
-        self,
-        internal_energy: InternalEnergy,
-        entropy: Entropy
-    ):
-        if internal_energy.volume != entropy.volume:
+    
+    @property
+    def volume(self):
+        return self._volume
+    
+    @volume.setter
+    def volume(self, value):
+        self._volume = value
+
+    @volume.getter
+    def volume(self):
+        return self._volume
+    
+    @volume.deleter
+    def volume(self):
+        del self._volume
+    
+    @property
+    def temperature(self):
+        return self._temperature
+    
+    @temperature.setter
+    def temperature(self, value):
+        self._temperature = value
+
+    @temperature.getter
+    def temperature(self):
+        return self._temperature
+    
+    @temperature.deleter
+    def temperature(self):
+        del self._temperature
+
+    @property
+    def internal_energy(self):
+        return self._internal_energy
+    
+    @internal_energy.setter
+    def internal_energy(self, internal_energy):
+        if self._entropy is not None and \
+            self._volume != internal_energy.volume:
             raise ValueError(
-                "Internal energy and entropy volumes must be the same"
+                "configuration entropy is defined and the configuration "
+                "volumes are inconsistent with those of the given "
+                "InternalEnergy object"
             )
-        u = internal_energy.energy
-        v = internal_energy.volume
-        t = entropy.temperature
-        s = entropy.entropy
         
-        f = np.zeros((len(t), len(v)))
-        for i in enumerate(t):
-            f[i] = u - t*s[i]
-        self.helmholtz_energy = HelmholtzEnergy(
-            helmholtz_energy = f,
-            volume = v,
-            temperature = t
-        )
+        self._internal_energy = internal_energy.energy
+
+        if self.volume != internal_energy.volume:
+            self._volume = internal_energy.volume
+    
+    @internal_energy.getter
+    def internal_energy(self):
+        return self._internal_energy
+    
+    @internal_energy.deleter
+    def internal_energy(self):
+        del self._internal_energy
+
+    @property
+    def entropy(self):
+        return self._entropy
+    
+    @entropy.setter
+    def entropy(self, entropy):
+        if self._internal_energy is not None:
+            if self._volume != entropy.volume:
+                raise ValueError(
+                    "configuration internal energy is defined and the "
+                    "configuration volumes are inconsistent with those of the "
+                    "given Entropy object"
+                )
+            if self._temperature != entropy.temperature:
+                raise ValueError(
+                    "configuration internal energy is defined and the "
+                    "configuration temperatures are inconsistent with those "
+                    "of the given Entropy object"
+                )
+        self._entropy = entropy.entropy
+        if self.volume != entropy.volume:
+            self._volume = entropy.volume
+        if self.temperature != entropy.temperature:
+            self._temperature = entropy.temperature
+
+    @entropy.getter
+    def entropy(self):
+        return self._entropy
+    
+    @entropy.deleter
+    def entropy(self):
+        del self._entropy
+
+    # @property
+    # def helmholtz_energy(self):
+    #     if self.volume != entropy.volume:
+    #         raise ValueError(
+    #             "Internal energy and entropy volumes must be the same"
+    #         )
+    #     u = self.internal_energy
+    #     v = self.volume
+    #     t = self.temperature
+    #     s = self.entropy
+        
+    #     f = np.zeros((len(t), len(v)))
+    #     for i in enumerate(t):
+    #         f[i] = u - t*s[i]
+    #     self.helmholtz_energy = HelmholtzEnergy(
+    #         helmholtz_energy = f,
+    #         volume = v,
+    #         temperature = t
+    #     )
+    # @helmholtz_energy.setter
+    # def helmholtz_energy(self, value):
+    #     self.helmholtz_energy = value
+
+    # @helmholtz_energy.getter
+    # def helmholtz_energy(self):
+    #     return self.helmholtz_energy
+    
+    # @helmholtz_energy.deleter
+    # def helmholtz_energy(self):
+    #     del self.helmholtz_energy
+    
+    
+
     def partition_function(
         self,
         helmholtz_energy: HelmholtzEnergy,
