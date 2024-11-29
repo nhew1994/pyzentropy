@@ -98,7 +98,7 @@ class Configuration:
         if self._entropy is not None and \
             self._volume != internal_energy.volume:
             raise ValueError(
-                "configuration entropy is defined and the configuration "
+                "Configuration entropy is defined and the configuration "
                 "volumes are inconsistent with those of the given "
                 "InternalEnergy object"
             )
@@ -125,14 +125,14 @@ class Configuration:
         if self._internal_energy is not None:
             if self._volume != entropy.volume:
                 raise ValueError(
-                    "configuration internal energy is defined and the "
-                    "configuration volumes are inconsistent with those of the "
+                    "Configuration internal energy is defined and the "
+                    "Configuration volumes are inconsistent with those of the "
                     "given Entropy object"
                 )
             if self._temperature != entropy.temperature:
                 raise ValueError(
-                    "configuration internal energy is defined and the "
-                    "configuration temperatures are inconsistent with those "
+                    "Configuration internal energy is defined and the "
+                    "Configuration temperatures are inconsistent with those "
                     "of the given Entropy object"
                 )
         self._entropy = entropy.entropy
@@ -149,36 +149,64 @@ class Configuration:
     def entropy(self):
         del self._entropy
 
-    # @property
-    # def helmholtz_energy(self):
-    #     if self.volume != entropy.volume:
-    #         raise ValueError(
-    #             "Internal energy and entropy volumes must be the same"
-    #         )
-    #     u = self.internal_energy
-    #     v = self.volume
-    #     t = self.temperature
-    #     s = self.entropy
-        
-    #     f = np.zeros((len(t), len(v)))
-    #     for i in enumerate(t):
-    #         f[i] = u - t*s[i]
-    #     self.helmholtz_energy = HelmholtzEnergy(
-    #         helmholtz_energy = f,
-    #         volume = v,
-    #         temperature = t
-    #     )
-    # @helmholtz_energy.setter
-    # def helmholtz_energy(self, value):
-    #     self.helmholtz_energy = value
-
-    # @helmholtz_energy.getter
-    # def helmholtz_energy(self):
-    #     return self.helmholtz_energy
+    @property
+    def helmholtz_energy(self):
+        return self._helmholtz_energy
     
-    # @helmholtz_energy.deleter
-    # def helmholtz_energy(self):
-    #     del self.helmholtz_energy
+    @helmholtz_energy.setter
+    def helmholtz_energy(self, helmholtz_energy):
+        if self._internal_energy is not None or self._entropy is not None:
+            if self._volume != helmholtz_energy.volume:
+                raise ValueError(
+                    "Configuration volume is inconsistent with the volume of the "
+                    "given HelmholtzEnergy object"
+                )
+            if self._temperature != helmholtz_energy.temperature:
+                raise ValueError(
+                    "Configuration temperature is inconsistent with the temperature "
+                    "of the given HelmholtzEnergy object"
+                )
+        self._helmholtz_energy = helmholtz_energy.energy
+        if self.volume != helmholtz_energy.volume:
+            self._volume = helmholtz_energy.volume
+        if self.temperature != helmholtz_energy.temperature:
+            self._temperature = helmholtz_energy.temperature
+    
+    @helmholtz_energy.getter
+    def helmholtz_energy(self):
+        return self._helmholtz_energy
+
+
+    @property
+    def helmholtz_energy(self):
+        if self.volume != entropy.volume:
+            raise ValueError(
+                "Internal energy and entropy volumes must be the same"
+            )
+        u = self.internal_energy
+        v = self.volume
+        t = self.temperature
+        s = self.entropy
+        
+        f = np.zeros((len(t), len(v)))
+        for i in enumerate(t):
+            f[i] = u - t*s[i]
+        self.helmholtz_energy = HelmholtzEnergy(
+            helmholtz_energy = f,
+            volume = v,
+            temperature = t
+        )
+    @helmholtz_energy.setter
+    def helmholtz_energy(self, value):
+        self.helmholtz_energy = value
+
+    @helmholtz_energy.getter
+    def helmholtz_energy(self):
+        return self.helmholtz_energy
+    
+    @helmholtz_energy.deleter
+    def helmholtz_energy(self):
+        del self.helmholtz_energy
     
     
 
