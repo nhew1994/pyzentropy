@@ -11,10 +11,12 @@ BOLTZMANN_CONSTANT = constants.physical_constants[
 class DiscreteV:
     def __init__(
         self,
+        value: np.array,
         volume: np.array
     ):
         self.value = value
         self.volume = volume
+        
 class DiscreteT:
     def __init__(
         self,
@@ -24,7 +26,7 @@ class DiscreteT:
         self.value = value
         self.temperature = temperature
 
-class DiscreteVT
+class DiscreteVT:
     def __init__(
         self,
         value: np.array,
