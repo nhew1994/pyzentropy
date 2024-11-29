@@ -7,7 +7,7 @@ BOLTZMANN_CONSTANT = constants.physical_constants[
     "Boltzmann constant in eV/K"
 ][0]
 
-class InternalEnergy:
+class InternalEnergyOfV:
     def __init__(
         self,
         internal_energy: np.array,
@@ -16,7 +16,7 @@ class InternalEnergy:
         self.energy = internal_energy
         self.volume = volume
 
-class Entropy:
+class EntropyOfVT:
     def __init__(
         self,
         entropy,
@@ -27,7 +27,7 @@ class Entropy:
         self.volume = volume
         self.temperature = temperature
 
-class HelmholtzEnergy:
+class HelmholtzEnergyOfVT:
     def __init__(
         self,
         helmholtz_energy: np.array,
@@ -102,6 +102,13 @@ class Configuration:
                 "volumes are inconsistent with those of the given "
                 "InternalEnergy object"
             )
+        if self._helmholtz_energy is not None and \
+            self._volume != internal_energy.volume:
+            raise ValueError(
+                "Configuration Helmholtz energy is defined and the "
+                "Configuration volumes are inconsistent with those of the "
+                "given InternalEnergy object"
+            )
         
         self._internal_energy = internal_energy.energy
 
@@ -135,6 +142,21 @@ class Configuration:
                     "Configuration temperatures are inconsistent with those "
                     "of the given Entropy object"
                 )
+        
+        if self._helmholtz_energy is not None:
+            if self._volume != entropy.volume:
+                raise ValueError(
+                    "Configuration Helmholtz energy is defined and the "
+                    "Configuration volumes are inconsistent with those of the "
+                    "given Entropy object"
+                )
+            if self._temperature != entropy.temperature:
+                raise ValueError(
+                    "Configuration Helmholtz energy is defined and the "
+                    "Configuration temperatures are inconsistent with those "
+                    "of the given Entropy object"
+                )
+
         self._entropy = entropy.entropy
         if self.volume != entropy.volume:
             self._volume = entropy.volume
@@ -155,17 +177,34 @@ class Configuration:
     
     @helmholtz_energy.setter
     def helmholtz_energy(self, helmholtz_energy):
-        if self._internal_energy is not None or self._entropy is not None:
+        if self._internal_energy is not None:
             if self._volume != helmholtz_energy.volume:
                 raise ValueError(
-                    "Configuration volume is inconsistent with the volume of the "
-                    "given HelmholtzEnergy object"
+                    "Configuration internal energy is defined and "
+                    "Configuration volume is inconsistent with the volume of "
+                    "the given HelmholtzEnergy object"
                 )
             if self._temperature != helmholtz_energy.temperature:
                 raise ValueError(
-                    "Configuration temperature is inconsistent with the temperature "
-                    "of the given HelmholtzEnergy object"
+                    "Configuration internal energy is defined and "
+                    "Configuration temperature is inconsistent with the "
+                    "temperature of the given HelmholtzEnergy object"
                 )
+        
+        if self._entropy is not None:
+            if self._volume != helmholtz_energy.volume:
+                raise ValueError(
+                    "Configuration entropy is defined and Configuration "
+                    "volume is inconsistent with the volume of the given "
+                    "HelmholtzEnergy object"
+                )
+            if self._temperature != helmholtz_energy.temperature:
+                raise ValueError(
+                    "Configuration entropy is defined and Configuration "
+                    "temperature is inconsistent with the temperature of the "
+                    "given HelmholtzEnergy object"
+                )
+
         self._helmholtz_energy = helmholtz_energy.energy
         if self.volume != helmholtz_energy.volume:
             self._volume = helmholtz_energy.volume
