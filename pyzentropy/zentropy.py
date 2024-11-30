@@ -31,7 +31,7 @@ class Configuration:
         structure,
         volume,
         temperature,
-        zero_point_energy = None,
+        zero_point_energy = None, # should generalize to internal energy
         entropy = None,
         helmholtz_energy = None,
     ):
