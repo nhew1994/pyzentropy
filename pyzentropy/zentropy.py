@@ -31,7 +31,7 @@ class Configuration:
         structure,
         volume,
         temperature,
-        internal_energy = None,
+        zero_point_energy = None,
         entropy = None,
         helmholtz_energy = None,
     ):
@@ -40,30 +40,30 @@ class Configuration:
         self.volume = volume
         self.temperature = temperature
 
-        inputs = [internal_energy, entropy, helmholtz_energy]
+        inputs = [zero_point_energy, entropy, helmholtz_energy]
         non_none_count = sum(arg is not None for arg in inputs)
         
         # Check if at least two arguments are provided
         if non_none_count < 2:
             raise ValueError("At least two of the following arguments must be "
-                             "provided.: internal_energy, entropy, "
+                             "provided.: zero_point_energy, entropy, "
                              "helmholtz_energy")
         
-        self.internal_energy = internal_energy
+        self.zero_point_energy = zero_point_energy
         self.entropy = entropy
         self.helmholtz_energy = helmholtz_energy
 
-        if self.internal_energy is None:
-            self.internal_energy = helmholtz_energy + temperature[:, np.newaxis]*entropy
+        if self.zero_point_energy is None:
+            self.zero_point_energy = helmholtz_energy + temperature[:, np.newaxis]*entropy
         elif self.entropy is None:
             self.entropy = np.divide(
-                internal_energy - helmholtz_energy,
+                zero_point_energy - helmholtz_energy,
                 temperature,
-                out=np.zeros_like(internal_energy),
+                out=np.zeros_like(zero_point_energy),
                 where=temperature!=0
             )
         elif self.helmholtz_energy is None:
-            self.helmholtz_energy = internal_energy - temperature*entropy
+            self.helmholtz_energy = zero_point_energy - temperature*entropy
         else:
             # validate consistency of the provided values
             pass
@@ -113,7 +113,7 @@ class System:
         ]
         sk_list = [config.entropy for config in configurations]
         cvk_list = [config.heat_capacity for config in configurations]
-        uk_list = [config.internal_energy for config in configurations]
+        uk_list = [config.zero_point_energy for config in configurations]
         pk = np.array(pk_list)
         sk = np.array(sk_list)
         cvk = np.array(cvk_list)
