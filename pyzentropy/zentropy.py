@@ -29,6 +29,7 @@ class Configuration:
         self,
         name,
         structure,
+        multiplicity,
         volume,
         temperature,
         internal_energy = None, # should generalize to internal energy
@@ -37,6 +38,7 @@ class Configuration:
     ):
         self.name = name
         self.structure = structure
+        self.multiplicity = multiplicity
         self.volume = volume
         self.temperature = temperature
 
@@ -68,7 +70,7 @@ class Configuration:
             # validate consistency of the provided values
             pass
 
-        self.partition_function = np.exp(
+        self.partition_function = self.multiplicity*np.exp(
             -helmholtz_energy/(BOLTZMANN_CONSTANT*temperature[:, np.newaxis])
         )
 
@@ -106,6 +108,9 @@ class System:
         self.helmholtz_energy = -BOLTZMANN_CONSTANT*self.temperature[:, np.newaxis]*np.log(
             self.partition_function
         )
+
+        for config in configurations:
+            config.probability = config.partition_function / self.partition_function
 
         pk_list = [
             config.partition_function / self.partition_function
