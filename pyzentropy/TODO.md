@@ -12,5 +12,5 @@
 - Add README.md
 - Add documentation
 - Add pyproject.toml
-
+- Find a way to specify temperauter and volume values instead of indices
 
