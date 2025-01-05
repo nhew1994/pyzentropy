@@ -42,6 +42,7 @@ class TabulatedNDProperty(NDProperty):
     def __init__(
             self,
             variable_labels,
+            property_label,
             points,
             values,
             method="linear",
@@ -51,7 +52,7 @@ class TabulatedNDProperty(NDProperty):
             solver=None,
             solver_args=None
     ):
-        super().__init__(variable_labels)
+        super().__init__(variable_labels, property_label)
         self.interp = RegularGridInterpolator(
             points,
             values,
