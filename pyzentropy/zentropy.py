@@ -11,6 +11,8 @@ class NDProperty(ABC):
         self.variable_labels = variable_labels
         self.property_label = property_label
         self.dimensions = len(variable_labels)
+    def __str__(self):
+        return f'{self.property_label} of {self.variable_labels}'
     @abstractmethod
     def value(self, points):
         pass
