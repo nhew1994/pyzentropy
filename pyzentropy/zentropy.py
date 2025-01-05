@@ -173,7 +173,7 @@ class Configuration:
         del self._entropy
 
     @property
-    def heat_capcacity(self):
+    def heat_capacity(self):
         return self._heat_capacity
         # elif self._entropy is not None:
         #     return self._entropy_to_heat_capacity()
