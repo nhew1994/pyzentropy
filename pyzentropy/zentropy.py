@@ -590,7 +590,7 @@ class HelmholtzSystem(System):
                 return False
         return True
 
-    def _helmholtz_to_probabilities(self, points): # change to points?
+    def _helmholtz_k_to_probabilities(self, points): # change to points?
         """
         Compute the probabilities of each configuration in the system based on
         the Helmholtz energies of the configurations. done in a numerically
@@ -677,6 +677,7 @@ class HelmholtzSystem(System):
         elif self._internal_energy is not None and self._entropy is not None:
             return self._internal_and_entropy_to_helmholtz()
         elif self.check_configurations_for_property('helmholtz_energy'):
+            return self._helmholtz_k_to_probabilities()
         else:
             return None
     
