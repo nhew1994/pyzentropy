@@ -601,6 +601,7 @@ class HelmholtzSystem(System):
             len(points[0]),
             len(points[1])
         )) # check if points[0] and points[1] are in the correct spot
+        configuration_names = []
         for i, configuration in enumerate(self.configurations):
             if configuration.helmholtz_energy is None:
                 raise ValueError(
@@ -610,18 +611,22 @@ class HelmholtzSystem(System):
             fk = configuration.helmholtz_energy.value(points)
             t = points[0] # temperature
             kb = BOLTZMANN_CONSTANT
-
             ln_zk = np.log(wk) - fk/(kb*t) # check if t is column or row vector
             all_ln_zk[i] = ln_zk
+            # making the list this way to make sure order is preserved.
+            # not sure if it is necessary.
+            configuration_names.append(configuration.name)
         ln_zk_max = np.max(all_ln_zk, axis=0)
-        probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
-        # make probabilities an NDProperty object
+        np_probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
+        # make np_probabilities into NDProperty objects
         variable_labels = ('T', 'V')
         property_label = 'probability' # might want to change this
-        values = probabilities
-
-        nd_probabilities = TabulatedNDProperty(variable_labels, points, values)
-        return nd_probabilities
+        probabilities = {}
+        for i, pk in enumerate(np_probabilities):
+            values = pk
+            nd_pk = TabulatedNDProperty(variable_labels, points, values)
+            probabilities[configuration_names[i]] = nd_pk
+        return probabilities
 
     @property
     def probabilities(self):
@@ -672,7 +677,6 @@ class HelmholtzSystem(System):
         elif self._internal_energy is not None and self._entropy is not None:
             return self._internal_and_entropy_to_helmholtz()
         elif self.check_configurations_for_property('helmholtz_energy'):
-
         else:
             return None
     
