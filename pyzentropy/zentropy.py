@@ -611,27 +611,39 @@ class HelmholtzSystem(System):
             len(temperature),
             len(volume)
         )) # check if temperature and volume are in the correct spots
-        for i, (name, configuration) in enumerate(self.configurations.items()):
+        names = []
+        for k, (name, configuration) in enumerate(self.configurations.items()):
+            names.append(name) # used below to make a dictionary
             if configuration.helmholtz_energy is None:
                 raise ValueError(
                     "Helmholtz energy must be provided for all configurations"
                 )
             wk = configuration.multiplicity
             fk = configuration.helmholtz_energy.values
-            t = points[0] # temperature
+            t = configuration.helmholtz_energy.points[0] # temperature
+            t = t[:, np.newaxis] # make t a column vector for the division
             kb = BOLTZMANN_CONSTANT
 
-            ln_zk = np.log(wk) - fk/(kb*t) # check if t is column or row vector
-            all_ln_zk[i] = ln_zk
+            ln_zk = np.log(wk) - fk/(kb*t)
+            all_ln_zk[k] = ln_zk
         ln_zk_max = np.max(all_ln_zk, axis=0)
         probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
         # make probabilities an NDProperty object
         variable_labels = ('T', 'V')
-        property_label = 'probability' # might want to change this
-        values = probabilities
+        property_label = 'p' # might want to change this
 
-        nd_probabilities = TabulatedNDProperty(variable_labels, points, values)
-        return nd_probabilities
+        probabilities_dict = {}
+        for k, prob in enumerate(probabilities):
+            values = prob
+            nd_prob = TabulatedNDProperty(
+                variable_labels,
+                property_label,
+                points,
+                values
+            )
+            name = names[k]
+            probabilities_dict[name] = nd_prob
+        return probabilities_dict
 
     @property
     def probabilities(self):
