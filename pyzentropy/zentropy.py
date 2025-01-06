@@ -63,6 +63,9 @@ class TabulatedNDProperty(NDProperty):
             solver=solver,
             solver_args=solver_args
         )
+        self.points = points
+        self.values = values
+
     def value(self, points):
         return self.interp(points)
     
@@ -601,12 +604,13 @@ class HelmholtzSystem(System):
         """
         first_config = next(iter(self.configurations.items()))
         print(first_config)
-        t_length = len(first_config[1].helmholtz_energy.points[0])
-        v_length = len(first_config[1].helmholtz_energy.points[1])
+        points = first_config[1].helmholtz_energy.points
+        temperature = points[0]
+        volume = points[1]
         all_ln_zk = np.zeros((
             len(self.configurations),
-            len(points[0]),
-            len(points[1])
+            len(temperature),
+            len(volume)
         )) # check if points[0] and points[1] are in the correct spot
         for i, configuration in enumerate(self.configurations):
             if configuration.helmholtz_energy is None:
