@@ -454,7 +454,7 @@ class System:
             if getattr(configuration, property) is None:
                 return False
         return True
-        
+
     @property
     def probabilities(self):
         return self._probabilities
@@ -633,13 +633,10 @@ class HelmholtzSystem(System):
     @property
     def probabilities(self):
         if self._probabilities is not None:
-            print("Returning probabilities")
             return self._probabilities
         elif self.check_configurations_for_property('helmholtz_energy'):
-            print("Calculating probabilities")
             return self._helmholtz_k_to_probabilities()
         else:
-            print("No probabilities")
             return None
 
     @probabilities.setter
