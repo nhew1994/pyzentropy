@@ -596,7 +596,7 @@ class HelmholtzSystem(System):
         super().__init__(name, configurations)
         self._variable_labels = ('T', 'V')
 
-    def _helmholtz_k_to_probabilities(self): # change to points?
+    def _helmholtz_k_to_probabilities(self):
         """
         Compute the probabilities of each configuration in the system based on
         the Helmholtz energies of the configurations. done in a numerically
@@ -610,7 +610,7 @@ class HelmholtzSystem(System):
             len(self.configurations),
             len(temperature),
             len(volume)
-        )) # check if temperature and volume are in the correct spots
+        ))
         names = []
         for k, (name, configuration) in enumerate(self.configurations.items()):
             names.append(name) # used below to make a dictionary
