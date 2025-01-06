@@ -22,6 +22,26 @@ class NDProperty(ABC):
     def minimize(self):
         pass
 
+# add these methods in the future
+#     def __add__(self, other):
+#         pass
+
+#     def __sub__(self, other):
+#         pass
+
+# +	__add__(self, other)	obj1 + obj2
+# -	__sub__(self, other)	obj1 - obj2
+# *	__mul__(self, other)	obj1 * obj2
+# /	__truediv__(self, other)	obj1 / obj2
+# //	__floordiv__(self, other)	obj1 // obj2
+# %	__mod__(self, other)	obj1 % obj2
+# **	__pow__(self, other)	obj1 ** obj2
+# ==	__eq__(self, other)	obj1 == obj2
+# !=	__ne__(self, other)	obj1 != obj2
+# <	__lt__(self, other)	obj1 < obj2
+# <=	__le__(self, other)	obj1 <= obj2
+# >	__gt__(self, other)	obj1 > obj2
+# >=	__ge__(self, other)	obj1 >= obj2
 
 class AnalyticalNDProperty(NDProperty):
     def __init__(self, function, variable_labels, property_label):
@@ -36,7 +56,6 @@ class AnalyticalNDProperty(NDProperty):
             "been implemented"
         )
     
-
 
 
 class TabulatedNDProperty(NDProperty):
@@ -646,7 +665,7 @@ class HelmholtzSystem(System):
             name = names[k]
             probabilities_dict[name] = nd_prob
         return probabilities_dict
-
+    
     @property
     def probabilities(self):
         if self._probabilities is not None:
@@ -775,3 +794,13 @@ class HelmholtzSystem(System):
     @heat_capacity.deleter
     def heat_capacity(self):
         del self._heat_capacity
+
+
+    @property
+    def gibbs_energy(self):
+        if self._gibbs_energy is not None:
+            return self._gibbs_energy
+        elif self._helmholtz_energy is not None:
+            return self._helmholtz_to_gibbs()
+        else:
+            return None
