@@ -445,7 +445,16 @@ class System:
                     f"'{configuration.name}' appeared more than once."
                 )
             self.configurations[configuration.name] = configuration
-   
+    
+    def check_configurations_for_property(self, property):
+        # might make this more complex later to tell user which configurations
+        # are missing the property. might want a simple one just to get the
+        # boolean value, and a more complex one to get which configurations.
+        for name, configuration in self.configurations.items():
+            if getattr(configuration, property) is None:
+                return False
+        return True
+        
     @property
     def probabilities(self):
         return self._probabilities
@@ -583,15 +592,6 @@ class HelmholtzSystem(System):
     def __init__(self, name, configurations=()):
         super().__init__(name, configurations)
         self._variable_labels = ('T', 'V')
-
-    def check_configurations_for_property(self, property):
-        # might make this more complex later to tell user which configurations
-        # are missing the property. might want a simple one just to get the
-        # boolean value, and a more complex one to get which configurations.
-        for name, configuration in self.configurations.items():
-            if getattr(configuration, property) is None:
-                return False
-        return True
 
     def _helmholtz_k_to_probabilities(self): # change to points?
         """
