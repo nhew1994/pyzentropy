@@ -627,7 +627,9 @@ class HelmholtzSystem(System):
             ln_zk = np.log(wk) - fk/(kb*t)
             all_ln_zk[k] = ln_zk
         ln_zk_max = np.max(all_ln_zk, axis=0)
-        probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
+        exps = np.exp(all_ln_zk - ln_zk_max) # Z_k
+        denominator = np.sum(exps, axis=0) # Z
+        probabilities = exps/denominator # Z_k/Z
         # make probabilities an NDProperty object
         variable_labels = ('T', 'V')
         property_label = 'p' # might want to change this
