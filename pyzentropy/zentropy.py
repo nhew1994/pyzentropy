@@ -666,6 +666,55 @@ class HelmholtzSystem(System):
             probabilities_dict[name] = nd_prob
         return probabilities_dict
     
+    def _helmholtz_k_and_probability_k_to_helmholtz(self):
+        """
+        Compute the Helmholtz energy of the system based on the Helmholtz
+        energies of the configurations and the probabilities of each
+        configuration.
+        """
+        first_config = next(iter(self.configurations.items()))
+        points = first_config[1].helmholtz_energy.points
+        temperature = points[0]
+        volume = points[1]
+        kb = BOLTZMANN_CONSTANT
+        fk_pk_array = np.zeros((
+            len(self.configurations),
+            len(temperature),
+            len(volume)
+        ))
+        pk_ln_pk_array = np.zeros((
+            len(self.configurations),
+            len(temperature),
+            len(volume)
+        ))
+        for i, (name, config) in enumerate(self.configurations.items()):
+            if config.helmholtz_energy is None:
+                raise ValueError(
+                    "Helmholtz energy must be provided for all configurations"
+                )
+            if self.probabilities[name] is None:
+                raise ValueError(
+                    "Probabilities must be provided for all configurations"
+                )
+            fk = config.helmholtz_energy.values 
+            pk = self.probabilities[name].values
+            fk_pk_array[i] = fk * pk
+            pk_ln_pk_array[i] = np.where(pk > 0.0, pk * np.log(pk), 0.0)
+        intra_helmholtz = np.sum(fk_pk_array, axis=0)
+        t = temperature[:, np.newaxis] # make t a column vector
+        inter_helmholtz = kb * t * np.sum(pk_ln_pk_array, axis=0)
+        helmholtz = intra_helmholtz + inter_helmholtz
+        # make helmholtz an NDProperty object
+        variable_labels = ('T', 'V')
+        property_label = 'F'
+        helmholtz_nd = TabulatedNDProperty(
+            variable_labels,
+            property_label,
+            points,
+            helmholtz
+        )
+        return helmholtz_nd
+
     @property
     def probabilities(self):
         if self._probabilities is not None:
@@ -715,7 +764,7 @@ class HelmholtzSystem(System):
         elif self._internal_energy is not None and self._entropy is not None:
             return self._internal_and_entropy_to_helmholtz()
         elif self.check_configurations_for_property('helmholtz_energy'):
-            return self._helmholtz_k_to_probabilities()
+            return self._helmholtz_k_and_probability_k_to_helmholtz()
         else:
             return None
     
