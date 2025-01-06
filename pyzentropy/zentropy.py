@@ -11,8 +11,9 @@ class NDProperty(ABC):
         self.variable_labels = variable_labels
         self.property_label = property_label
         self.dimensions = len(variable_labels)
+
     def __str__(self):
-        return f'{self.property_label} of {self.variable_labels}'
+        return f"{self.property_label}({', '.join(self.variable_labels)})"
     @abstractmethod
     def value(self, points):
         pass
@@ -583,7 +584,6 @@ class HelmholtzSystem(System):
         super().__init__(name, configurations)
         self._variable_labels = ('T', 'V')
 
-    @property
     def check_configurations_for_property(self, property):
         # might make this more complex later to tell user which configurations
         # are missing the property. might want a simple one just to get the
@@ -593,18 +593,21 @@ class HelmholtzSystem(System):
                 return False
         return True
 
-    def _helmholtz_k_to_probabilities(self, points): # change to points?
+    def _helmholtz_k_to_probabilities(self): # change to points?
         """
         Compute the probabilities of each configuration in the system based on
         the Helmholtz energies of the configurations. done in a numerically
         stable way using a log-sum-exp approach.
         """
+        first_config = next(iter(self.configurations.items()))
+        print(first_config)
+        t_length = len(first_config[1].helmholtz_energy.points[0])
+        v_length = len(first_config[1].helmholtz_energy.points[1])
         all_ln_zk = np.zeros((
             len(self.configurations),
             len(points[0]),
             len(points[1])
         )) # check if points[0] and points[1] are in the correct spot
-        configuration_names = []
         for i, configuration in enumerate(self.configurations):
             if configuration.helmholtz_energy is None:
                 raise ValueError(
@@ -614,30 +617,29 @@ class HelmholtzSystem(System):
             fk = configuration.helmholtz_energy.value(points)
             t = points[0] # temperature
             kb = BOLTZMANN_CONSTANT
+
             ln_zk = np.log(wk) - fk/(kb*t) # check if t is column or row vector
             all_ln_zk[i] = ln_zk
-            # making the list this way to make sure order is preserved.
-            # not sure if it is necessary.
-            configuration_names.append(configuration.name)
         ln_zk_max = np.max(all_ln_zk, axis=0)
-        np_probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
-        # make np_probabilities into NDProperty objects
+        probabilities = np.exp(all_ln_zk - ln_zk_max)/np.sum(ln_zk_max, axis=0)
+        # make probabilities an NDProperty object
         variable_labels = ('T', 'V')
         property_label = 'probability' # might want to change this
-        probabilities = {}
-        for i, pk in enumerate(np_probabilities):
-            values = pk
-            nd_pk = TabulatedNDProperty(variable_labels, points, values)
-            probabilities[configuration_names[i]] = nd_pk
-        return probabilities
+        values = probabilities
+
+        nd_probabilities = TabulatedNDProperty(variable_labels, points, values)
+        return nd_probabilities
 
     @property
     def probabilities(self):
         if self._probabilities is not None:
+            print("Returning probabilities")
             return self._probabilities
         elif self.check_configurations_for_property('helmholtz_energy'):
-            return self._helmholtz_to_probabilities()
+            print("Calculating probabilities")
+            return self._helmholtz_k_to_probabilities()
         else:
+            print("No probabilities")
             return None
 
     @probabilities.setter
