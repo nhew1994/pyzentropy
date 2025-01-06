@@ -15,11 +15,11 @@ class NDProperty(ABC):
     def __str__(self):
         return f"{self.property_label}({', '.join(self.variable_labels)})"
     @abstractmethod
-    def value(self, points):
+    def calculate_value(self, points):
         pass
     
     @abstractmethod
-    def minimum(self):
+    def minimize(self):
         pass
 
 
@@ -27,10 +27,10 @@ class AnalyticalNDProperty(NDProperty):
     def __init__(self, function, variable_labels, property_label):
         super().__init__(variable_labels, property_label)
         self.function = function
-    def value(self, points) -> float:
+    def calculate_value(self, points) -> float:
         return self.function(points)
     
-    def minimum(self) -> float:
+    def minimize(self) -> float:
         raise NotImplementedError(
             "Logic to calculate the minimum of an analytical property has not "
             "been implemented"
@@ -66,10 +66,10 @@ class TabulatedNDProperty(NDProperty):
         self.points = points
         self.values = values
 
-    def value(self, points):
+    def calculate_value(self, points):
         return self.interp(points)
     
-    def minimum(self):
+    def minimize(self):
         raise NotImplementedError(
             "Logic to calculate the minimum of a tabulated property has not "
             "been implemented"
@@ -603,7 +603,6 @@ class HelmholtzSystem(System):
         stable way using a log-sum-exp approach.
         """
         first_config = next(iter(self.configurations.items()))
-        print(first_config)
         points = first_config[1].helmholtz_energy.points
         temperature = points[0]
         volume = points[1]
@@ -611,14 +610,14 @@ class HelmholtzSystem(System):
             len(self.configurations),
             len(temperature),
             len(volume)
-        )) # check if points[0] and points[1] are in the correct spot
-        for i, configuration in enumerate(self.configurations):
+        )) # check if temperature and volume are in the correct spots
+        for i, (name, configuration) in enumerate(self.configurations.items()):
             if configuration.helmholtz_energy is None:
                 raise ValueError(
                     "Helmholtz energy must be provided for all configurations"
                 )
             wk = configuration.multiplicity
-            fk = configuration.helmholtz_energy.value(points)
+            fk = configuration.helmholtz_energy.values
             t = points[0] # temperature
             kb = BOLTZMANN_CONSTANT
 
