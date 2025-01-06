@@ -453,6 +453,7 @@ class System:
         self._heat_capacity = None
         self._bulk_modulus = None
         self._thermal_expansion_coefficient = None
+        self._pressure = None
 
         for i, configuration in enumerate(configurations):
             if not isinstance(configuration, Configuration):
@@ -714,7 +715,40 @@ class HelmholtzSystem(System):
             helmholtz
         )
         return helmholtz_nd
+    
+    def _helmholtz_to_pressure(self):
+        """
+        Compute the pressure of the system based on the Helmholtz energy of the
+        system.
+        """
+        f = self.helmholtz_energy
+        points = f.points
+        volume = points[1]
+        pressure = -np.gradient(f.values, volume, axis=1)
+        # return pressure as an NDProperty object
+        variable_labels = ('T', 'V')
+        property_label = 'P'
+        pressure_nd = TabulatedNDProperty(
+            variable_labels,
+            property_label,
+            points,
+            pressure
+        )
+        return pressure_nd
 
+    # def _helmholtz_to_gibbs(self):
+    #     """
+    #     Compute the Gibbs energy of the system based on the Helmholtz energy
+    #     of the system.
+    #     """
+    #     f = self.helmholtz_energy
+    #     temperature = f.points[0]
+    #     volume = f.points[1]
+    #     kb = BOLTZMANN_CONSTANT
+    #     pressure = 
+    #     g = f.values + pressure*volume
+
+        
     @property
     def probabilities(self):
         if self._probabilities is not None:
@@ -764,7 +798,8 @@ class HelmholtzSystem(System):
         elif self._internal_energy is not None and self._entropy is not None:
             return self._internal_and_entropy_to_helmholtz()
         elif self.check_configurations_for_property('helmholtz_energy'):
-            return self._helmholtz_k_and_probability_k_to_helmholtz()
+            self._helmholtz_energy = self._helmholtz_k_and_probability_k_to_helmholtz()
+            return self._helmholtz_energy
         else:
             return None
     
@@ -851,5 +886,14 @@ class HelmholtzSystem(System):
             return self._gibbs_energy
         elif self._helmholtz_energy is not None:
             return self._helmholtz_to_gibbs()
+        else:
+            return None
+
+    @property 
+    def pressure(self):
+        if self._pressure is not None:
+            return self._pressure
+        elif self._helmholtz_energy is not None:
+            return self._helmholtz_to_pressure()
         else:
             return None
