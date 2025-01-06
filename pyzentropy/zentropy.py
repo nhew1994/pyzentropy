@@ -588,7 +588,7 @@ class HelmholtzSystem(System):
         # might make this more complex later to tell user which configurations
         # are missing the property. might want a simple one just to get the
         # boolean value, and a more complex one to get which configurations.
-        for configuration in self.configurations:
+        for name, configuration in self.configurations.items():
             if getattr(configuration, property) is None:
                 return False
         return True
