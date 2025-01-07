@@ -595,7 +595,7 @@ class System:
         del self._thermal_expansion_coefficient
     
 
-# This might be appropriate for the HelmholtzSystem class
+# This might be appropriate for the NVTSystem class
     # @property
     # def helmholtz_energy(self, points): # relative to the lowest energy configuration
     #     # Check that all configurations have a Helmholtz energy
@@ -611,7 +611,7 @@ class System:
     #                 configuration.helmholtz_energy.value(points)
     #         ):
                 
-class HelmholtzSystem(System):
+class NVTSystem(System):
     def __init__(self, name, configurations=()):
         super().__init__(name, configurations)
         self._variable_labels = ('T', 'V')
