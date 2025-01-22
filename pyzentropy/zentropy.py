@@ -2,9 +2,9 @@ import numpy as np
 from abc import ABC, abstractmethod
 from scipy.interpolate import RegularGridInterpolator
 from scipy.constants import physical_constants
+from scipy.interpolate import interp1d
 
 BOLTZMANN_CONSTANT = physical_constants["Boltzmann constant in eV/K"][0]
-
 
 class NDProperty(ABC):
     def __init__(self, variable_labels, property_label):
@@ -93,9 +93,47 @@ class TabulatedNDProperty(NDProperty):
             "Logic to calculate the minimum of a tabulated property has not "
             "been implemented"
         )
+    def partial_derivative(
+            self,
+            wrt_index, # change to 'T' or 'V' etc in the future perhaps
+            new_label,
+            scaling_factor=1 # temporary till NDProperty multiplication is implemented
+    ):
+        """
+        Compute the partial derivative of the property with respect to one of
+        its variables.
 
-    
+        Args:
+            wrt_index (int): Index of the variable with respect to which the
+                             derivative is taken.
+            new_label (str): Label of the new variable.
 
+        Returns:
+            TabulatedNDProperty: A new TabulatedNDProperty object representing
+                                 the partial derivative of the property.
+        """
+        if new_label is None:
+            new_label = f"d({self.property_label})/d({self.variable_labels[wrt_index]})"
+
+        coord = self.points[wrt_index]
+
+        derivative_array = np.gradient(
+            self.values,
+            coord,      # spacing along the axis in question
+            axis=wrt_index
+        )
+
+        derivative_array *= scaling_factor
+
+        return TabulatedNDProperty(
+            variable_labels=self.variable_labels,
+            property_label=new_label,
+            points=self.points,
+            values=derivative_array,
+            method=self.interp.method,
+            bounds_error=self.interp.bounds_error,
+            fill_value=self.interp.fill_value
+        )
 
 class Configuration:
     def __init__(
@@ -417,13 +455,14 @@ class HelmholtzConfiguration(Configuration):
         del self._heat_capacity
 
 
-                                 
+        
+
+    
+
             
 
 
 class EnthalpyConfiguration(Configuration):
-    pass
-class GibbsConfiguration(Configuration):
     pass
 class InternalConfiguration(Configuration):
     pass
@@ -754,6 +793,7 @@ class NVTSystem(System):
         if self._probabilities is not None:
             return self._probabilities
         elif self.check_configurations_for_property('helmholtz_energy'):
+            self._probabilities = self._helmholtz_k_to_probabilities()
             return self._helmholtz_k_to_probabilities()
         else:
             return None
@@ -897,3 +937,80 @@ class NVTSystem(System):
             return self._helmholtz_to_pressure()
         else:
             return None
+        
+def build_f_of_tp(F_TV, P_TV, new_T_points, new_P_points): #likely temporary function
+    """
+    Not 100% sure this is correct. the result looks good.
+    """
+    # Unpack data from the F(T,V) property
+    T_points, V_points = F_TV.points     # e.g. (array_of_T, array_of_V)
+    F_values = F_TV.values              # shape (nT, nV)
+    # Unpack data from the P(T,V) property
+    P_values = P_TV.values              # shape (nT, nV)
+
+    # We will create a 2D array of size (len(new_T_points), len(new_P_points))
+    F_TP_values = np.zeros((len(new_T_points), len(new_P_points)), dtype=float)
+    F_TP_values.fill(np.nan)  # initialize with NaN
+
+    # For fast lookups, make 2D interpolators (optional if you already have them)
+    F_interp = RegularGridInterpolator((T_points, V_points), F_values, bounds_error=False, fill_value=np.nan)
+    P_interp = RegularGridInterpolator((T_points, V_points), P_values, bounds_error=False, fill_value=np.nan)
+
+    # For each T_i in new_T_points:
+    for i, T_i in enumerate(new_T_points):
+        # 1) Extract the 1D slice of P vs V at that T:
+        #    We'll do this by using P_interp at [T_i, V_points].
+        #    If T_i is exactly one of the T_points, we can index directly.
+        #    Otherwise, we can use an interpolator to get the row.
+
+        # Let's do a direct interpolation approach:
+        P_slice = P_interp(np.array([[T_i, v] for v in V_points]))  # shape = (nV,)
+
+        # Now build a 1D interpolation: P_slice(v) -> v
+        # Make sure there's at least one strictly monotonic interval.
+        # If P_slice is decreasing in v, invert by flipping v_points and P_slice.
+        # We'll assume it's strictly decreasing in V, so P_slice[0] > P_slice[-1].
+        # If it's the opposite, we can just reorder them.
+
+        # Check monotonic direction:
+        if P_slice[0] < P_slice[-1]:
+            # It's increasing in V, so let's invert that interpolation
+            v_points_for_interp = V_points
+            P_points_for_interp = P_slice
+        else:
+            # It's decreasing, so reverse them for a monotonic ascending function
+            v_points_for_interp = V_points[::-1]
+            P_points_for_interp = P_slice[::-1]
+
+        # Create an interpolator from P -> V
+        #   so that if we input a particular P, we get a V that yields that P
+        P_to_V = interp1d(
+            P_points_for_interp,
+            v_points_for_interp,
+            kind='linear',
+            bounds_error=False,
+            fill_value=np.nan
+        )
+
+        # 2) For each new_P in new_P_points, find the corresponding volume V_i
+        for j, P_j in enumerate(new_P_points):
+            # If this P_j is outside the range of P_slice, we'll get NaN
+            V_solution = P_to_V(P_j)
+
+            # 3) Evaluate F(T_i, V_solution)
+            if not np.isnan(V_solution):
+                F_TP_values[i, j] = F_interp([T_i, V_solution])
+            else:
+                F_TP_values[i, j] = np.nan  # out of range
+
+    # Finally, build a new TabulatedNDProperty for F(T,P)
+    F_TP = TabulatedNDProperty(
+        variable_labels=("T", "P"),
+        property_label="F",
+        points=(new_T_points, new_P_points),
+        values=F_TP_values,
+        method="linear",
+        bounds_error=False,
+        fill_value=np.nan
+    )
+    return F_TP
