@@ -320,11 +320,12 @@ class Configuration:
     #     )
 
 
-class HelmholtzConfiguration(Configuration):
+class NDConfiguration(Configuration):
     def __init__(
             self,
             name,
             structure,
+            variable_labels,
             multiplicity,
             internal_energy=None,
             helmholtz_energy=None,
@@ -344,7 +345,7 @@ class HelmholtzConfiguration(Configuration):
             bulk_modulus,
             thermal_expansion_coefficient
         )
-        self._variable_labels = ('T', 'V')
+        self._variable_labels = variable_labels
 
     @property
     def internal_energy(self):
@@ -363,7 +364,8 @@ class HelmholtzConfiguration(Configuration):
             )
         if nd_property.variable_labels != self._variable_labels:
             raise ValueError(
-                "internal_energy must have variable labels ('T', 'V')"
+                "internal_energy must have variable labels "
+                f"{self._variable_labels}"
             )
         self._internal_energy = nd_property
 
@@ -388,7 +390,8 @@ class HelmholtzConfiguration(Configuration):
             )
         if nd_property.variable_labels != self._variable_labels:
             raise ValueError(
-                "helmholtz_energy must have variable labels ('T', 'V')"
+                "helmholtz_energy must have variable labels "
+                f"{self._variable_labels}"
             )
         self._helmholtz_energy = nd_property
 
@@ -421,7 +424,8 @@ class HelmholtzConfiguration(Configuration):
             )
         if nd_property.variable_labels != self._variable_labels:
             raise ValueError(
-                "entropy must have variable labels ('T', 'V')"
+                "entropy must have variable labels "
+                f"{self._variable_labels}"
             )
         self._entropy = nd_property
 
@@ -446,7 +450,8 @@ class HelmholtzConfiguration(Configuration):
             )
         if nd_property.variable_labels != self._variable_labels:
             raise ValueError(
-                "heat_capacity must have variable labels ('T', 'V')"
+                "heat_capacity must have variable labels "
+                f"{self._variable_labels}"
             )
         self._heat_capacity = nd_property
 
