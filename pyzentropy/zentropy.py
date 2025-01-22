@@ -345,7 +345,7 @@ class NDConfiguration(Configuration):
             bulk_modulus,
             thermal_expansion_coefficient
         )
-        self._variable_labels = variable_labels
+        self._variable_labels = variable_labels # need to be able to set this.
 
     @property
     def internal_energy(self):
