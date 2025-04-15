@@ -1,8 +1,12 @@
 # PyZentropy
 
 ## Overview
+PyZentropy is a Python package designed to implement the zentropy approach, enabling the calculation of the total entropy of a system by combining the entropy contributions from individual configurations.
 
 ## What does PyZentropy do?
+<p align="center">
+    <img src="docs/_static/zentropy_equations.png" alt="DFTTK Logo">
+</p>
 
 ## Installation
 
