@@ -5,7 +5,7 @@ PyZentropy is a Python package designed to implement the zentropy approach, enab
 
 ## What does PyZentropy do?
 <p align="center">
-    <img src="docs/_static/zentropy_equations.png" alt="DFTTK Logo">
+    <img src="docs/_static/zentropy_equations.png" alt="DFTTK Logo" width="400" height="auto">
 </p>
 
 ## Installation
